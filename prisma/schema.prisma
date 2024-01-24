@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Define the User model to represent users.
+model User {
+  id        String   @id @default(cuid())
+  kindeId   String  @unique // Unique identifier for users
+  firstName String   // First name of the user
+  lastName  String   // Last name of the user
+  joined    DateTime @default(now()) // Date when the user joined
+
+  // Define a new field to represent the many-to-many relationship with books.
+  // This field will hold user-book associations, including "isRead" and "addedDate."
+  books     BookUser[] // A user can have multiple books
+
+  // Define a one-to-many relationship with comments. Each user can post multiple comments.
+  comments  Comment[]
+}
+
+// Define the Book model to represent books.
+model Book {
+  id         String   @id @default(cuid())
+  isbn       String   @unique // ISBN is a unique identifier for books
+  title      String   // Title of the book
+  author     String   // Author of the book
+  category   String   // Category or genre of the book
+  description String?  // Optional description of the book
+  thumbnail  String?  // URL to the book's thumbnail image
+  pageCount  Int?     // Number of pages in the book
+
+  // Remove isRead field from here because it will be handled in the BookUser model.
+
+  // Define a new field to represent the many-to-many relationship with users.
+  // This field will hold book-user associations, including "addedDate."
+  users      BookUser[] // A book can have multiple users (authors and readers)
+
+  // Define a one-to-many relationship with comments. Each book can have multiple comments.
+  comments   Comment[]
+}
+
+// Define a new table to represent the many-to-many relationship between Users and Books.
+// The BookUser model includes fields "isRead" and "addedDate" to track user-book interactions.
+model BookUser {
+  id      String   @id @default(cuid())
+  userId  String   // Reference to the user's kindeId
+  bookId  String   // Reference to the book's ISBN
+  isRead  Boolean  @default(false) // This field represents whether the user has read the book or not
+  addedDate DateTime @default(now()) // Date when the user added the book
+
+  // Define foreign keys and relationships:
+  user    User     @relation(fields: [userId], references: [kindeId]) // User reference
+  book    Book     @relation(fields: [bookId], references: [isbn]) // Book reference
+
+  // Ensure uniqueness of user-book combinations to prevent duplication.
+  @@unique([userId, bookId])
+}
+
+// Define the Comment model to represent comments.
+model Comment {
+  commentId    String   @id @default(cuid())
+  commenter    String   // Reference to the user's kindeId who posted the comment
+  comment      String   // The text content of the comment
+  commentedBook String   // Reference to the book's ISBN being commented on
+  createdAt    DateTime @default(now()) // Date when the comment was created
+
+  // Define relationships to User and Book models to associate comments with users and books.
+  user         User     @relation(fields: [commenter], references: [kindeId]) // User reference
+  book         Book     @relation(fields: [commentedBook], references: [isbn]) // Book reference
+}
+
+
+
+
+
+
+
+
